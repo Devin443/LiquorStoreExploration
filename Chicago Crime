@@ -1,0 +1,112 @@
+--Q1 What are the top crimes being committed?
+
+SELECT
+  COUNT(primary_type) as charges,
+  primary_type as charge_type
+FROM
+  `bigquery-public-data.chicago_crime.crime`
+GROUP BY primary_type
+ORDER BY COUNT(primary_type) DESC
+
+--Q2 In which year were the most crimes committed and what seems to be the trend?
+
+SELECT
+  EXTRACT(YEAR FROM date) AS year,
+  COUNT(EXTRACT(YEAR FROM date)) as count_per_year
+FROM
+  `bigquery-public-data.chicago_crime.crime`
+GROUP BY year
+ORDER BY count_per_year DESC
+
+--Q3 What months were most crimes committed in?
+
+SELECT
+  EXTRACT(MONTH FROM date) AS month,
+  COUNT(EXTRACT(MONTH FROM date)) as count_per_MONTH
+FROM
+  `bigquery-public-data.chicago_crime.crime`
+GROUP BY month
+ORDER BY count_per_month DESC
+
+--Q4 How many criminals were arrested?
+
+SELECT
+  COUNT(arrest) as count_arrested,
+  arrest
+FROM
+  `bigquery-public-data.chicago_crime.crime`
+GROUP BY arrest
+
+--Q5 Where did the crimes take place?
+
+SELECT
+  location_description,
+  COUNT(location_description) AS count_location
+FROM
+  `bigquery-public-data.chicago_crime.crime`
+GROUP BY location_description
+ORDER BY count_location DESC
+LIMIT 10
+
+--Q6 What was the different arrest rate for each crime committed?
+
+SELECT
+  primary_type as crime_commited,
+  CASE
+    WHEN arrest = true THEN 'Arrested'
+    ELSE 'Not Arrested' END AS arrest_status,
+  COUNT(*) as total
+FROM
+  `bigquery-public-data.chicago_crime.crime`
+GROUP BY
+  crime_commited,
+  arrest
+ORDER BY crime_commited
+
+--Q7 same as above, Just by a specific year
+
+SELECT
+    primary_type as crime_commited,
+    arrest,
+    COUNT(*)
+FROM
+    `bigquery-public-data.chicago_crime.crime`
+WHERE
+    EXTRACT(YEAR FROM date) = 2023
+GROUP BY
+    crime_commited,
+    arrest
+ORDER BY
+    crime_commited;
+
+--Q8 What was the arrest rate for the crimes committed in Chicago
+
+
+SELECT
+    primary_type as crime_commited,
+    SUM(CASE WHEN arrest = TRUE THEN 1 ELSE 0 END) AS arrests,
+    COUNT(*) AS total_crimes,
+    (SUM(CASE WHEN arrest = TRUE THEN 1 ELSE 0 END) / COUNT(*)) * 100 AS arrest_rate
+FROM
+    `bigquery-public-data.chicago_crime.crime`
+GROUP BY
+    crime_commited
+ORDER BY
+    crime_commited;
+
+--Q9 Which crimes often occur together most frequently?
+
+SELECT
+    t1.primary_type AS crime_type_1,
+    t2.primary_type AS crime_type_2,
+    COUNT(*) AS co_occurrence_count
+FROM
+    `bigquery-public-data.chicago_crime.crime` t1
+JOIN
+    `bigquery-public-data.chicago_crime.crime` t2 ON t1.block = t2.block AND t1.date = t2.date AND t1.unique_key != t2.unique_key
+WHERE t1.primary_type < t2.primary_type -- Avoid duplicate pairs
+GROUP BY
+    crime_type_1, crime_type_2
+ORDER BY
+    co_occurrence_count DESC
+LIMIT 10;
